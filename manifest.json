@@ -1,6 +1,6 @@
 {
-  "name": "Inspecto",
-  "short_name": "Inspecto",
+  "name": "inspeccao-5s",
+  "short_name": "inspeccao-5s",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",

@@ -1,15 +1,24 @@
-<script src="https://cdn.tailwindcss.com"></script>
+
 
 <!DOCTYPE html>
 <html lang="pt-BR">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Inspeções 5S</title>
-    <script type="module" crossorigin src="/inspecao-5s/assets/index-DqmqL7G-.js"></script>
-    <link rel="stylesheet" crossorigin href="/inspecao-5s/assets/index-DDNRfDMl.css">
+    <title>Inspecto</title>
+    <link rel="manifest" href="/inspecao-5s/assets/manifest-DfArmP7q.json">
+    <meta name="theme-color" content="#0f172a">
+    <script type="module" crossorigin src="/inspecao-5s/assets/index-XSpWgRfw.js"></script>
+    <link rel="stylesheet" crossorigin href="/inspecao-5s/assets/index-giBtVYj2.css">
   </head>
   <body>
     <div id="root"></div>
+    <script>
+      if ("serviceWorker" in navigator && location.protocol !== "null:") {
+        window.addEventListener("load", () => {
+        navigator.serviceWorker.register("./service-worker.js")
+        });}
+    </script>
+
   </body>
 </html>

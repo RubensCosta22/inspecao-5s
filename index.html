@@ -1,11 +1,11 @@
-<script src="https://cdn.tailwindcss.com"></script>
+
 
 <!DOCTYPE html>
 <html lang="pt-BR">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Inspeccao-5s</title>
+    <title>Inspecto</title>
     <link rel="manifest" href="./manifest.json">
     <meta name="theme-color" content="#0f172a">
   </head>
@@ -13,11 +13,10 @@
     <div id="root"></div>
     <script type="module" src="/src/main.jsx"></script>
     <script>
-      if ("serviceWorker" in navigator) {
-      navigator.serviceWorker
-        .register("./service-worker.js")
-        .then(() => console.log("Service Worker registrado"))
-        .catch(err => console.error("SW erro", err));}
+      if ("serviceWorker" in navigator && location.protocol !== "null:") {
+        window.addEventListener("load", () => {
+        navigator.serviceWorker.register("./service-worker.js")
+        });}
     </script>
 
   </body>

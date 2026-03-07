@@ -1,16 +1,65 @@
-# React + Vite
+# Inspeção 5S — PWA Offline
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+App de inspeção 5S com persistência local (IndexedDB), funciona 100% offline após primeira carga.
 
-Currently, two official plugins are available:
+## Stack
+- React 19 + Vite
+- Tailwind CSS v4
+- lucide-react (ícones)
+- IndexedDB (persistência offline nativa do browser)
+- PWA (Service Worker + manifest)
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+## Estrutura dos arquivos de configuração
 
-## React Compiler
+### `src/config.js`
+**Edite este arquivo** para personalizar o app:
+- `APP_NAME`, `APP_SUBTITLE` — nome exibido na tela inicial
+- `AREAS` — objeto com 8 áreas e seus sublocais
+- `QUESTIONARIO` — perguntas dos 5 sensos
+- `OPCOES_RESPOSTA` — opções de resposta
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+### `src/db.js`
+Wrapper IndexedDB. Funções: `saveInspection`, `getAllInspections`, `deleteInspection`.
 
-## Expanding the ESLint configuration
+### `src/helpers.js`
+Cálculo de scores e utilitários de formatação.
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+### `service-worker.js`
+Cache-first: app funciona offline após primeira visita.
+
+## Como rodar
+
+```bash
+npm install
+npm run dev
+```
+
+## Build + deploy GitHub Pages
+
+```bash
+npm run build
+npm run deploy
+```
+
+## Persistência de dados
+
+Todas as inspeções (incluindo fotos comprimidas) são salvas no **IndexedDB** do dispositivo.
+- Fotos são redimensionadas para máx. 800px e comprimidas (JPEG 75%) antes de salvar
+- Dados persistem entre sessões e funcionam offline
+- Para limpar os dados: DevTools → Application → IndexedDB → `inspecao5s_db`
+
+## Adaptar para Android nativo (Capacitor)
+
+```bash
+npm install @capacitor/core @capacitor/cli @capacitor/android
+npx cap init
+npx cap add android
+npm run build
+npx cap copy
+npx cap open android
+```
+
+## Regras de negócio
+- Respostas **Não Atende** ou **Parcial**: foto + observação obrigatórios
+- Se todos os itens atendem: ao menos 1 foto geral obrigatória
+- Ações sugeridas: campo opcional

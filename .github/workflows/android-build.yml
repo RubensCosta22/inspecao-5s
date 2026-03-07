@@ -1,0 +1,28 @@
+name: Gerar APK Inspecto
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: 📥 Checkout do código
+        uses: actions/checkout@v4
+
+      - name: 🏗️ Configurar Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20 # Versão compatível com seu Node v22 local
+
+      - name: 🚀 Configurar Expo e EAS
+        run: npm install -g eas-cli
+
+      - name: 📦 Instalar dependências (Raiz/Frontend)
+        run: npm install
+
+      - name: 🛠️ Build do APK via EAS
+        run: |
+          eas build --platform android --profile preview --non-interactive
+        env:
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}

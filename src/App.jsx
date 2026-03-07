@@ -80,6 +80,9 @@ export default function App() {
   const [dashboardFilter, setDashboardFilter] = useState('Todas');
   const [dashboardYear,   setDashboardYear]   = useState(new Date().getFullYear().toString());
   const [dashboardMonth,  setDashboardMonth]  = useState((new Date().getMonth() + 1).toString());
+  const [aiPhotos, setAiPhotos]   = useState({ geral: null, seiri: null, seiton: null, seiso: null, seiketsu: null, shitsuke: null });
+  const [aiLoading, setAiLoading] = useState(false);
+  const [aiDone, setAiDone]       = useState(false);
 
   // Photo upload refs
   const fileInputRef    = useRef(null);
@@ -133,7 +136,9 @@ export default function App() {
           handleAnswerChange(id, 'fotos', [...prev, compressed]);
         } else if (type === 'general') {
           setCurrentData(p => ({ ...p, fotosGerais: [...p.fotosGerais, compressed] }));
-        }
+        } else if (type === 'ai' && id) {
+          setAiPhotos(p => ({ ...p, [id]: compressed }));
+            }
       };
       img.src = reader.result;
     };
@@ -182,6 +187,46 @@ export default function App() {
       respostas: { ...p.respostas, [questionId]: { ...p.respostas[questionId], [field]: value } },
     }));
   };
+  const handleAiAnalysis = async () => {
+  const missing = Object.entries(aiPhotos).filter(([, v]) => !v).map(([k]) => k);
+  if (missing.length > 0) {
+    alert(`Fotos faltando: ${missing.join(', ')}`);
+    return;
+  }
+  setAiLoading(true);
+  try {
+    const response = await fetch(`${import.meta.env.VITE_API_URL}/api/analyze`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ photos: aiPhotos })
+    });
+    if (!response.ok) throw new Error('Erro na análise');
+    const result = await response.json();
+
+    const novasRespostas = {};
+    QUESTIONARIO.forEach(bloco => {
+      bloco.perguntas.forEach(p => {
+        const valor = result[p.id];
+        if (valor) {
+          novasRespostas[p.id] = {
+            valor,
+            obs: result.justificativas?.[p.id] || '',
+            fotos: []
+          };
+        }
+      });
+    });
+
+    setCurrentData(prev => ({ ...prev, respostas: novasRespostas }));
+    setAiDone(true);
+    setScreen('audit');
+  } catch (err) {
+    alert('Erro ao analisar fotos. Verifique a conexão.');
+    console.error(err);
+  } finally {
+    setAiLoading(false);
+  }
+};
 
   const validateAndSummary = () => {
     const errors = [];
@@ -312,15 +357,115 @@ export default function App() {
         </Card>
       </div>
 
-      <div className="fixed bottom-0 left-0 right-0 p-4 bg-white border-t border-slate-200 shadow-lg md:relative md:bg-transparent md:border-none md:shadow-none md:max-w-2xl md:mx-auto">
-        <Button onClick={handleStartAudit} className="w-full text-lg">Iniciar Inspeção</Button>
+    <div className="fixed bottom-0 left-0 right-0 p-4 bg-white border-t border-slate-200 shadow-lg md:relative md:bg-transparent md:border-none md:shadow-none md:max-w-2xl md:mx-auto">
+        <div className="space-y-3">
+          <Button onClick={() => {
+          if (!currentData.auditor.trim() || !currentData.local) {
+          alert('Preencha auditor e local.');
+          return;
+      }
+      setScreen('ai');
+    }} className="w-full text-lg">
+        <Search size={20} /> Analisar com IA
+          </Button>
+          <Button onClick={handleStartAudit} variant="secondary" className="w-full">
+          Preencher manualmente
+          </Button>
       </div>
+</div>
     </div>
   );
 
   // -------------------------------------------------------------------------
   // SCREEN: AUDIT FORM
   // -------------------------------------------------------------------------
+  const renderAiCapture = () => {
+  const sensos = [
+    { key: 'geral',    label: 'Foto Geral da Área',     desc: 'Visão ampla do ambiente' },
+    { key: 'seiri',    label: 'Utilização (Seiri)',      desc: 'Itens desnecessários, organização geral' },
+    { key: 'seiton',   label: 'Organização (Seiton)',    desc: 'Etiquetas, demarcações, emergência' },
+    { key: 'seiso',    label: 'Limpeza (Seiso)',         desc: 'Limpeza, lixeiras, resíduos' },
+    { key: 'seiketsu', label: 'Padronização (Seiketsu)', desc: 'Manutenção, produtos químicos' },
+    { key: 'shitsuke', label: 'Disciplina (Shitsuke)',   desc: 'EPIs, comportamento da equipe' },
+  ];
+  const allPhotos = Object.values(aiPhotos).every(v => v !== null);
+
+  return (
+    <div className="min-h-screen bg-slate-50 pb-24">
+      <input type="file" accept="image/*" capture="environment"
+        ref={fileInputRef} onChange={handleFileChange} className="hidden" />
+
+      <header className="bg-white px-4 py-4 shadow-sm flex items-center gap-3 sticky top-0 z-10">
+        <button onClick={() => setScreen('new')} className="p-2 hover:bg-slate-100 rounded-full">
+          <ArrowLeft className="text-slate-600" />
+        </button>
+        <div className="flex-1">
+          <h2 className="font-semibold text-slate-800 text-lg">Análise com IA</h2>
+          <p className="text-xs text-slate-400">{currentData.local}</p>
+        </div>
+      </header>
+
+      <div className="p-4 max-w-2xl mx-auto space-y-4">
+        <Card className="p-4 bg-blue-50 border-blue-200">
+          <p className="text-sm text-blue-800">
+            📸 Tire <strong>6 fotos</strong> da área. O Gemini vai analisar e preencher
+            o formulário automaticamente. Você poderá revisar antes de salvar.
+          </p>
+        </Card>
+
+        {sensos.map(({ key, label, desc }) => (
+          <Card key={key} className="p-4">
+            <div className="flex items-center justify-between mb-2">
+              <div>
+                <p className="font-medium text-slate-800">{label}</p>
+                <p className="text-xs text-slate-400">{desc}</p>
+              </div>
+              {aiPhotos[key] && (
+                <div className="w-5 h-5 bg-green-500 rounded-full flex items-center justify-center">
+                  <CheckCircle size={12} className="text-white" />
+                </div>
+              )}
+            </div>
+            {aiPhotos[key] ? (
+              <div className="relative w-full h-32">
+                <img src={aiPhotos[key]} alt={label}
+                  className="w-full h-32 object-cover rounded-lg border border-slate-200" />
+                <button onClick={() => setAiPhotos(p => ({ ...p, [key]: null }))}
+                  className="absolute top-2 right-2 w-6 h-6 bg-red-500 rounded-full flex items-center justify-center text-white">
+                  <X size={12} />
+                </button>
+              </div>
+            ) : (
+              <button onClick={() => {
+                activeUploadRef.current = { type: 'ai', id: key };
+                fileInputRef.current?.click();
+              }}
+                className="w-full border-2 border-dashed border-slate-300 rounded-lg p-4 flex items-center justify-center gap-2 text-slate-500 hover:bg-slate-50">
+                <Camera size={20} />
+                <span className="text-sm">Tirar foto</span>
+              </button>
+            )}
+          </Card>
+        ))}
+      </div>
+
+      <div className="fixed bottom-0 left-0 right-0 p-4 bg-white border-t border-slate-200 shadow-lg">
+        <div className="max-w-2xl mx-auto space-y-2">
+          <Button onClick={handleAiAnalysis} disabled={!allPhotos || aiLoading} className="w-full text-lg">
+            {aiLoading
+              ? <><RefreshCw size={20} className="animate-spin" /> Analisando...</>
+              : <><Search size={20} /> Analisar com IA</>}
+          </Button>
+          <button onClick={() => setScreen('audit')}
+            className="w-full text-sm text-slate-400 hover:text-slate-600 py-2">
+            Pular e preencher manualmente
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
   const renderAuditForm = () => {
     const totalQ  = QUESTIONARIO.reduce((acc, b) => acc + b.perguntas.length, 0);
     const filledQ = Object.values(currentData.respostas).filter(r => r?.valor).length;
@@ -880,6 +1025,7 @@ export default function App() {
         {screen === 'summary'   && renderSummary()}
         {screen === 'history'   && renderHistory()}
         {screen === 'dashboard' && renderDashboard()}
+        {screen === 'ai'        && renderAiCapture()}
       </div>
     </>
   );

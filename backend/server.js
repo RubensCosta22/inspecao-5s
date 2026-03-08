@@ -16,7 +16,9 @@ try {
 }
 
 const app = express();
-const PORT = process.env.PORT || 3001;
+const PORT = process.env.PORT || 8080; // O Cloud Run usa 8080 por padrão
+app.listen(PORT, '0.0.0.0', () => {
+    console.log(`Servidor Inspecto online na porta ${PORT}`);});
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
 
 app.use(cors());

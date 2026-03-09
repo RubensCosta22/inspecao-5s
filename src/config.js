@@ -3,7 +3,7 @@
 
 export const APP_NAME = 'Inspecto';
 export const APP_SUBTITLE = 'Inteligência em Auditorias 5S';
-export const APP_VERSION = '0.0.1';
+export const APP_VERSION = '1.0.0';
 
 // ---------------------------------------------------------------------------
 // ÁREAS E SUBLOCAIS

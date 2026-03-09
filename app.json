@@ -4,11 +4,11 @@
     "slug": "inspecao-5s",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./src/icon-512.png",
+    "icon": "./src/assets/icon-512.png",
     "userInterfaceStyle": "light",
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./src/icon-192.png",
+        "foregroundImage": "./src/assets/icon-192.png",
         "backgroundColor": "#ffffff"
       },
       "package": "com.rubens.inspecao5s"

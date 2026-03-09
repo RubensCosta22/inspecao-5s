@@ -1,5 +1,32 @@
 {
   "expo": {
+    "name": "inspecao-5s",
+    "slug": "inspecao-5s",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./src/assets/icon-512.png",
+    "userInterfaceStyle": "light",
+    "splash": {
+      "image": "./src/assets/icon-512.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#ffffff"
+    },
+    "assetBundlePatterns": [
+      "**/*"
+    ],
+    "ios": {
+      "supportsTablet": true
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./src/assets/icon-192.png",
+        "backgroundColor": "#ffffff"
+      },
+      "package": "com.rubens.inspecao5s"
+    },
+    "web": {
+      "favicon": "./src/assets/icon-192.png"
+    },
     "extra": {
       "eas": {
         "projectId": "0487e083-3567-4cf3-845e-4dd13219f3af"

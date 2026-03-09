@@ -24,9 +24,6 @@
       },
       "package": "com.rubens.inspecao5s"
     },
-    "web": {
-      "favicon": "./src/assets/icon-192.png"
-    },
     "extra": {
       "eas": {
         "projectId": "0487e083-3567-4cf3-845e-4dd13219f3af"

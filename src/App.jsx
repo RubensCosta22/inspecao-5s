@@ -195,7 +195,7 @@ export default function App() {
   }
   setAiLoading(true);
   try {
-    const response = await fetch(`${import.meta.env.VITE_API_URL}/api/analyze`, {
+    const response = await fetch(`${process.env.EXPO_PUBLIC_VITE_API_URL}/api/analyze`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ photos: aiPhotos })

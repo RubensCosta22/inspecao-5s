@@ -3,6 +3,7 @@
   "homepage": "https://github.com/RubensCosta22/inspecao-5s",
   "private": true,
   "version": "2.0.0",
+  "main": "src/App.jsx",
   "type": "module",
   "scripts": {
     "dev": "vite",

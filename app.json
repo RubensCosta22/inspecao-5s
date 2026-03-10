@@ -12,12 +12,26 @@
       "backgroundColor": "#ffffff"
     },
     "android": {
+      "package": "com.rubens.inspecao5s",
+      "permissions": [
+        "CAMERA",
+        "READ_EXTERNAL_STORAGE",
+        "WRITE_EXTERNAL_STORAGE"
+      ],
       "adaptiveIcon": {
         "foregroundImage": "./src/assets/icon-192.png",
         "backgroundColor": "#ffffff"
-      },
-      "package": "com.rubens.inspecao5s"
+      }
     },
+    "plugins": [
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "O aplicativo precisa de acesso às suas fotos para anexar evidências.",
+          "cameraPermission": "O aplicativo precisa de acesso à câmera para realizar a auditoria."
+        }
+      ]
+    ],
     "extra": {
       "eas": {
         "projectId": "0487e083-3567-4cf3-845e-4dd13219f3af"

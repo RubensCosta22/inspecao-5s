@@ -6,6 +6,11 @@
     "orientation": "portrait",
     "icon": "./src/assets/icon-512.png",
     "userInterfaceStyle": "light",
+    "splash": {
+      "image": "./src/assets/icon-512.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#ffffff"
+    },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./src/assets/icon-192.png",

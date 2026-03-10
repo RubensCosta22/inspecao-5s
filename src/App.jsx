@@ -6,7 +6,7 @@ import {
   AlertTriangle, Search, Trash2, Plus, FileText,
   ChevronDown, LayoutDashboard, PieChart, Printer, Filter,
   Calendar, Lightbulb, WifiOff, RefreshCw, X
-} from 'lucide-react';
+} from 'lucide-react-native';
 
 import { APP_NAME, APP_SUBTITLE, APP_VERSION, AREAS, MONTHS, QUESTIONARIO, OPCOES_RESPOSTA } from './config.js';
 import { calculateScore, calculateSenseScores, getAreaFromLocal, scoreColor, scoreBg, scoreBadge, formatDate } from './helpers.js';

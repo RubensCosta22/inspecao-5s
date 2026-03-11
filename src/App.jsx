@@ -1,34 +1,33 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   StyleSheet, View, Text, TouchableOpacity, ScrollView, 
-  TextInput, Image, Alert, ActivityIndicator, SafeAreaView,
+  Image, Alert, ActivityIndicator, SafeAreaView,
   StatusBar, Platform 
 } from 'react-native';
+import { registerRootComponent } from 'expo';
 import * as ImagePicker from 'expo-image-picker';
 import * as ImageManipulator from 'expo-image-manipulator';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 // Ícones específicos para Native
 import {
-  Camera, Save, ClipboardList, History, ArrowLeft, CheckCircle,
-  AlertTriangle, Search, Trash2, Plus, FileText,
-  ChevronDown, LayoutDashboard, PieChart, Printer, Filter,
-  Calendar, Lightbulb, WifiOff, RefreshCw, X
+  Camera, ClipboardList, History, ArrowLeft, CheckCircle,
+  AlertTriangle, Search, Trash2, Plus, 
+  ChevronDown, LayoutDashboard, Lightbulb, RefreshCw, X
 } from 'lucide-react-native';
 
-// Seus arquivos de configuração (mantenha como estão)
-import { APP_NAME, APP_SUBTITLE, APP_VERSION, AREAS, MONTHS, QUESTIONARIO, OPCOES_RESPOSTA } from './config.js';
-import { calculateScore, calculateSenseScores, getAreaFromLocal, scoreColor, scoreBg, scoreBadge, formatDate } from './helpers.js';
+// Importações do seu projeto (config.js e helpers.js devem estar na mesma pasta src)
+import { APP_NAME, APP_SUBTITLE, APP_VERSION, AREAS, QUESTIONARIO, OPCOES_RESPOSTA } from './config.js';
+import { calculateScore, calculateSenseScores, getAreaFromLocal, scoreColor, scoreBg } from './helpers.js';
 
 // ---------------------------------------------------------------------------
-// COMPONENTES DE UI NATIVOS (Substituem os HTML)
+// UI COMPONENTS
 // ---------------------------------------------------------------------------
 
 const Button = ({ children, onClick, variant = 'primary', disabled = false, style = {} }) => {
   const bgColor = variant === 'primary' ? '#1d4ed8' : variant === 'danger' ? '#dc2626' : '#fff';
-  const textColor = variant === 'secondary' ? '#1d4ed8' : '#fff';
   const borderColor = variant === 'secondary' ? '#bfdbfe' : 'transparent';
-
+  
   return (
     <TouchableOpacity 
       onPress={onClick} 
@@ -36,7 +35,11 @@ const Button = ({ children, onClick, variant = 'primary', disabled = false, styl
       style={[styles.btn, { backgroundColor: bgColor, borderColor, borderWidth: variant === 'secondary' ? 1 : 0 }, style, disabled && { opacity: 0.5 }]}
     >
       <View style={styles.btnContent}>
-        {children}
+        {typeof children === 'string' ? (
+          <Text style={variant === 'secondary' ? styles.btnTextSec : styles.btnText}>{children}</Text>
+        ) : (
+          children
+        )}
       </View>
     </TouchableOpacity>
   );
@@ -49,7 +52,7 @@ const Card = ({ children, style = {} }) => (
 );
 
 // ---------------------------------------------------------------------------
-// APP PRINCIPAL
+// MAIN APP
 // ---------------------------------------------------------------------------
 
 export default function App() {
@@ -71,7 +74,6 @@ export default function App() {
     };
   }
 
-  // Carregar dados usando AsyncStorage (substitui IndexedDB no Mobile)
   useEffect(() => {
     const loadData = async () => {
       try {
@@ -83,30 +85,26 @@ export default function App() {
     loadData();
   }, []);
 
-  // Salvar no AsyncStorage
   const saveToStorage = async (newList) => {
     try {
       await AsyncStorage.setItem('@inspections', JSON.stringify(newList));
     } catch (e) { console.error(e); }
   };
 
-  // -------------------------------------------------------------------------
-  // CAPTURA E COMPRESSÃO DE FOTOS NATIVA
-  // -------------------------------------------------------------------------
   const takePhoto = async (type, id = null) => {
-    const permission = await ImagePicker.requestCameraPermissionsAsync();
-    if (!permission.granted) {
-      Alert.alert("Permissão necessária", "Precisamos de acesso à câmera.");
+    const { status } = await ImagePicker.requestCameraPermissionsAsync();
+    if (status !== 'granted') {
+      Alert.alert("Erro", "Acesso à câmera negado.");
       return;
     }
 
     const result = await ImagePicker.launchCameraAsync({
       mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: false,
       quality: 0.7,
     });
 
     if (!result.canceled) {
-      // Comprimir imagem
       const manipResult = await ImageManipulator.manipulateAsync(
         result.assets[0].uri,
         [{ resize: { width: 800 } }],
@@ -120,8 +118,6 @@ export default function App() {
       } else if (type === 'question') {
         const prev = currentData.respostas[id]?.fotos || [];
         handleAnswerChange(id, 'fotos', [...prev, base64Img]);
-      } else if (type === 'general') {
-        setCurrentData(p => ({ ...p, fotosGerais: [...p.fotosGerais, base64Img] }));
       }
     }
   };
@@ -133,27 +129,56 @@ export default function App() {
     }));
   };
 
-  const handleSaveInspection = async () => {
-    const score = calculateScore(currentData.respostas);
-    const senseScores = calculateSenseScores(currentData.respostas);
-    const area = getAreaFromLocal(currentData.local);
-    const newInsp = { id: Date.now(), ...currentData, score, senseScores, area, timestamp: new Date().toLocaleString('pt-BR') };
-    
-    const newList = [newInsp, ...inspections];
-    setInspections(newList);
-    await saveToStorage(newList);
-    setScreen('home');
+  const handleAiAnalysis = async () => {
+    const missing = Object.entries(aiPhotos).filter(([k, v]) => !v);
+    if (missing.length > 0) {
+      Alert.alert("Fotos Faltando", "Por favor, tire todas as 6 fotos solicitadas.");
+      return;
+    }
+
+    setAiLoading(true);
+    try {
+      const response = await fetch(`${process.env.EXPO_PUBLIC_VITE_API_URL}/api/analyze`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ photos: aiPhotos })
+      });
+
+      if (!response.ok) throw new Error('Falha na comunicação com o Gemini');
+      
+      const result = await response.json();
+      const novasRespostas = {};
+
+      QUESTIONARIO.forEach(bloco => {
+        bloco.perguntas.forEach(p => {
+          if (result[p.id]) {
+            novasRespostas[p.id] = {
+              valor: result[p.id],
+              obs: result.justificativas?.[p.id] || '',
+              fotos: []
+            };
+          }
+        });
+      });
+
+      setCurrentData(prev => ({ ...prev, respostas: novasRespostas }));
+      setScreen('audit');
+    } catch (err) {
+      Alert.alert("Erro na IA", "Não foi possível analisar as fotos agora.");
+    } finally {
+      setAiLoading(false);
+    }
   };
 
   // -------------------------------------------------------------------------
-  // RENDERIZAÇÃO DE TELAS (EXEMPLO HOME)
+  // SCREENS
   // -------------------------------------------------------------------------
 
   if (screen === 'home') {
     return (
       <SafeAreaView style={styles.container}>
         <StatusBar barStyle="dark-content" />
-        <ScrollView contentContainerStyle={styles.homeContent}>
+        <View style={styles.homeContent}>
           <View style={styles.logoContainer}>
             <View style={styles.logoBox}>
               <ClipboardList color="white" size={40} />
@@ -162,110 +187,103 @@ export default function App() {
             <Text style={styles.subtitle}>{APP_SUBTITLE}</Text>
           </View>
 
-          <Button onClick={() => setScreen('new')} style={{ marginBottom: 12 }}>
+          <Button onClick={() => setScreen('new')} style={{ width: '100%', marginBottom: 15 }}>
             <Plus color="white" size={20} />
             <Text style={styles.btnText}>Nova Inspeção</Text>
           </Button>
 
           <View style={{ flexDirection: 'row', gap: 10 }}>
-            <Button variant="secondary" onClick={() => setScreen('dashboard')} style={{ flex: 1 }}>
-              <LayoutDashboard color="#1d4ed8" size={18} />
-              <Text style={styles.btnTextSec}>Painel</Text>
-            </Button>
             <Button variant="secondary" onClick={() => setScreen('history')} style={{ flex: 1 }}>
               <History color="#1d4ed8" size={18} />
               <Text style={styles.btnTextSec}>Histórico</Text>
             </Button>
           </View>
-
           <Text style={styles.version}>v{APP_VERSION}</Text>
-        </ScrollView>
+        </View>
       </SafeAreaView>
     );
   }
 
-  // Render para a tela de Auditoria (Formulário)
   if (screen === 'audit') {
     return (
       <SafeAreaView style={styles.container}>
         <View style={styles.header}>
-          <TouchableOpacity onPress={() => setScreen('new')}>
+          <TouchableOpacity onPress={() => setScreen('home')}>
             <ArrowLeft color="#334155" size={24} />
           </TouchableOpacity>
-          <Text style={styles.headerTitle}>Auditoria 5S</Text>
+          <Text style={styles.headerTitle}>Auditoria em {currentData.local || 'Local'}</Text>
         </View>
         <ScrollView style={{ padding: 15 }}>
           {QUESTIONARIO.map((bloco, bIdx) => (
-            <View key={bIdx} style={{ marginBottom: 25 }}>
+            <View key={bIdx} style={{ marginBottom: 20 }}>
               <Text style={styles.sectionTitle}>{bloco.fullSenso}</Text>
               {bloco.perguntas.map((p) => {
                 const resp = currentData.respostas[p.id] || {};
                 return (
-                  <Card key={p.id} style={{ padding: 15, marginBottom: 10 }}>
-                    <Text style={{ fontWeight: '600', marginBottom: 10 }}>{p.texto}</Text>
-                    <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 5 }}>
+                  <Card key={p.id} style={{ padding: 15, marginBottom: 12 }}>
+                    <Text style={{ fontWeight: '700', color: '#1e293b', marginBottom: 10 }}>{p.texto}</Text>
+                    <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
                       {OPCOES_RESPOSTA.map(op => (
                         <TouchableOpacity 
                           key={op.value}
                           onPress={() => handleAnswerChange(p.id, 'valor', op.value)}
-                          style={[styles.optionBtn, resp.valor === op.value && { backgroundColor: '#eff6ff', borderColor: '#3b82f6' }]}
+                          style={[styles.optionBtn, resp.valor === op.value && { backgroundColor: '#dbeafe', borderColor: '#2563eb' }]}
                         >
-                          <Text style={{ fontSize: 12 }}>{op.label}</Text>
+                          <Text style={{ fontSize: 11, fontWeight: '600' }}>{op.label}</Text>
                         </TouchableOpacity>
                       ))}
                     </View>
-                    <TouchableOpacity 
-                      onPress={() => takePhoto('question', p.id)}
-                      style={styles.photoTrigger}
-                    >
-                      <Camera color="#3b82f6" size={20} />
-                      <Text style={{ color: '#3b82f6', marginLeft: 8 }}>
-                        {resp.fotos?.length > 0 ? `Fotos (${resp.fotos.length})` : 'Tirar Foto'}
-                      </Text>
-                    </TouchableOpacity>
                   </Card>
                 );
               })}
             </View>
           ))}
-          <Button onClick={() => setScreen('summary')} style={{ marginVertical: 30 }}>
-            <CheckCircle color="white" size={20} />
-            <Text style={styles.btnText}>Finalizar</Text>
+          <Button onClick={() => setScreen('home')} style={{ marginBottom: 40 }}>
+            <Save color="white" size={20} />
+            <Text style={styles.btnText}>Salvar Localmente</Text>
           </Button>
         </ScrollView>
       </SafeAreaView>
     );
   }
 
-  // Se estiver em outra tela, exibe botão de volta simples para debug
+  // Fallback para telas em desenvolvimento
   return (
     <SafeAreaView style={styles.container}>
-       <Text style={{ textAlign: 'center', marginTop: 50 }}>Tela {screen} em construção Nativa...</Text>
-       <Button onClick={() => setScreen('home')}><Text>Voltar Home</Text></Button>
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', padding: 20 }}>
+        {aiLoading ? <ActivityIndicator size="large" color="#1d4ed8" /> : (
+          <>
+            <Text style={{ marginBottom: 20 }}>Módulo IA ou Configuração pendente.</Text>
+            <Button onClick={() => setScreen('home')}>Voltar ao Início</Button>
+          </>
+        )}
+      </View>
     </SafeAreaView>
   );
 }
 
 // ---------------------------------------------------------------------------
-// ESTILOS (Substituem as classes Tailwind)
+// STYLES
 // ---------------------------------------------------------------------------
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#f8fafc' },
-  homeContent: { padding: 30, alignItems: 'center', justifyContent: 'center', flexGrow: 1 },
-  logoContainer: { alignItems: 'center', marginBottom: 40 },
-  logoBox: { backgroundColor: '#1d4ed8', width: 80, height: 80, borderRadius: 20, alignItems: 'center', justifyContent: 'center', elevation: 5 },
-  title: { fontSize: 24, fontWeight: 'bold', color: '#1e293b', marginTop: 15 },
-  subtitle: { color: '#64748b' },
-  btn: { borderRadius: 12, paddingVertical: 15, paddingHorizontal: 20, elevation: 2 },
+  homeContent: { flex: 1, padding: 30, alignItems: 'center', justifyContent: 'center' },
+  logoContainer: { alignItems: 'center', marginBottom: 50 },
+  logoBox: { backgroundColor: '#1d4ed8', width: 80, height: 80, borderRadius: 20, alignItems: 'center', justifyContent: 'center' },
+  title: { fontSize: 28, fontWeight: 'bold', color: '#1e293b', marginTop: 15 },
+  subtitle: { color: '#64748b', fontSize: 16 },
+  btn: { borderRadius: 12, paddingVertical: 15, paddingHorizontal: 20 },
   btnContent: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center' },
   btnText: { color: 'white', fontWeight: 'bold', fontSize: 16, marginLeft: 8 },
-  btnTextSec: { color: '#1d4ed8', fontWeight: 'bold', fontSize: 14, marginLeft: 8 },
-  card: { backgroundColor: 'white', borderRadius: 15, padding: 10, shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.1, shadowRadius: 2, elevation: 2 },
+  btnTextSec: { color: '#1d4ed8', fontWeight: 'bold', fontSize: 16, marginLeft: 8 },
+  card: { backgroundColor: 'white', borderRadius: 16, padding: 10, elevation: 2, shadowColor: '#000', shadowOpacity: 0.05, shadowRadius: 10 },
   header: { padding: 15, backgroundColor: 'white', flexDirection: 'row', alignItems: 'center', borderBottomWidth: 1, borderBottomColor: '#e2e8f0' },
   headerTitle: { fontSize: 18, fontWeight: 'bold', marginLeft: 15 },
-  sectionTitle: { fontSize: 16, fontWeight: 'bold', color: '#1d4ed8', marginBottom: 10, backgroundColor: '#eff6ff', padding: 8, borderRadius: 5 },
-  optionBtn: { padding: 8, borderWidth: 1, borderColor: '#e2e8f0', borderRadius: 8, minWidth: '48%' },
-  photoTrigger: { flexDirection: 'row', alignItems: 'center', marginTop: 15, backgroundColor: '#f0f9ff', padding: 10, borderRadius: 8 },
+  sectionTitle: { fontSize: 15, fontWeight: 'bold', color: '#1d4ed8', marginBottom: 12, textTransform: 'uppercase' },
+  optionBtn: { paddingVertical: 8, paddingHorizontal: 12, borderWidth: 1, borderColor: '#e2e8f0', borderRadius: 8 },
   version: { position: 'absolute', bottom: 20, color: '#94a3b8', fontSize: 12 }
 });
+
+// REGISTRO OBRIGATÓRIO PARA NÃO CRASHAR
+registerRootComponent(App);

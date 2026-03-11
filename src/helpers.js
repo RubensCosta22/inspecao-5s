@@ -49,22 +49,23 @@ export const getAreaFromLocal = (localName) => {
 };
 
 export const scoreColor = (score, hasData = true) => {
-  if (!hasData) return 'text-slate-300';
-  if (score >= 80) return 'text-green-600';
-  if (score >= 60) return 'text-yellow-600';
-  return 'text-red-600';
+  if (!hasData) return '#cbd5e1'; // slate-300
+  if (score >= 80) return '#16a34a'; // green-600
+  if (score >= 60) return '#ca8a04'; // yellow-600
+  return '#dc2626'; // red-600
 };
 
 export const scoreBg = (score) => {
-  if (score >= 80) return 'bg-green-500';
-  if (score >= 60) return 'bg-yellow-500';
-  return 'bg-red-500';
+  if (score >= 80) return '#22c55e'; // green-500
+  if (score >= 60) return '#eab308'; // yellow-500
+  return '#ef4444'; // red-500
 };
 
+// Se você usar o scoreBadge, ele precisa retornar um objeto de estilo para o Native
 export const scoreBadge = (score) => {
-  if (score >= 80) return 'bg-green-100 text-green-700';
-  if (score >= 60) return 'bg-yellow-100 text-yellow-700';
-  return 'bg-red-100 text-red-700';
+  if (score >= 80) return { bg: '#dcfce7', text: '#15803d' };
+  if (score >= 60) return { bg: '#fef9c3', text: '#a16207' };
+  return { bg: '#fee2e2', text: '#b91c1c' };
 };
 
 export const formatDate = (dateStr) =>

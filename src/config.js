@@ -104,8 +104,9 @@ export const QUESTIONARIO = [
     senso: 'Utilização',
     fullSenso: 'Senso de Utilização (Seiri)',
     key: 'seiri',
-    color: 'bg-blue-100 text-blue-800 border-blue-200',
-    headerColor: 'bg-blue-600',
+    // Mudamos as classes para códigos Hexadecimais para o React Native entender
+    color: '#dbeafe',       // Azul claro
+    headerColor: '#1d4ed8', // Azul escuro
     perguntas: [
       { id: 'seiri_1', texto: 'A área está livre de itens desnecessários ocupando espaço?' },
       { id: 'seiri_2', texto: 'A área está livre de itens que ofereçam risco ou demonstrem desorganização?' },
@@ -116,8 +117,8 @@ export const QUESTIONARIO = [
     senso: 'Organização',
     fullSenso: 'Senso de Organização (Seiton)',
     key: 'seiton',
-    color: 'bg-orange-100 text-orange-800 border-orange-200',
-    headerColor: 'bg-orange-500',
+    color: '#ffedd5',       // Laranja claro
+    headerColor: '#f97316', // Laranja escuro
     perguntas: [
       { id: 'seiton_1', texto: 'Equipamentos de emergência estão disponíveis, demarcados e desobstruídos?' },
       { id: 'seiton_2', texto: 'Materiais e equipamentos estão etiquetados corretamente?' },
@@ -128,8 +129,8 @@ export const QUESTIONARIO = [
     senso: 'Limpeza',
     fullSenso: 'Senso de Limpeza (Seiso)',
     key: 'seiso',
-    color: 'bg-green-100 text-green-800 border-green-200',
-    headerColor: 'bg-green-600',
+    color: '#dcfce7',       // Verde claro
+    headerColor: '#16a34a', // Verde escuro
     perguntas: [
       { id: 'seiso_1', texto: 'O local está em boas condições de limpeza?' },
       { id: 'seiso_2', texto: 'Ferramentas, equipamentos e máquinas estão limpos?' },
@@ -142,8 +143,8 @@ export const QUESTIONARIO = [
     senso: 'Padronização',
     fullSenso: 'Senso de Padronização (Seiketsu)',
     key: 'seiketsu',
-    color: 'bg-purple-100 text-purple-800 border-purple-200',
-    headerColor: 'bg-purple-600',
+    color: '#f3e8ff',       // Roxo claro
+    headerColor: '#9333ea', // Roxo escuro
     perguntas: [
       { id: 'seiketsu_1', texto: 'A área está livre de máquinas ou equipamentos que necessitem manutenção?' },
       { id: 'seiketsu_2', texto: 'As condições de trabalho atendem aos padrões adequados?' },
@@ -154,8 +155,8 @@ export const QUESTIONARIO = [
     senso: 'Disciplina',
     fullSenso: 'Senso de Disciplina (Shitsuke)',
     key: 'shitsuke',
-    color: 'bg-slate-100 text-slate-800 border-slate-200',
-    headerColor: 'bg-slate-600',
+    color: '#f1f5f9',       // Cinza claro
+    headerColor: '#475569', // Cinza escuro
     perguntas: [
       { id: 'shitsuke_1', texto: 'EPIs estão disponíveis e em boas condições conforme o setor?' },
       { id: 'shitsuke_2', texto: 'Colaboradores demonstram conhecimento e comprometimento com o 5S?' },
@@ -163,12 +164,9 @@ export const QUESTIONARIO = [
   },
 ];
 
-// ---------------------------------------------------------------------------
-// OPÇÕES DE RESPOSTA
-// ---------------------------------------------------------------------------
 export const OPCOES_RESPOSTA = [
-  { value: 'atende',     label: 'Atende',     color: 'text-green-700',  bg: 'bg-green-100'  },
-  { value: 'parcial',    label: 'Parcial',    color: 'text-yellow-700', bg: 'bg-yellow-100' },
-  { value: 'nao_atende', label: 'Não Atende', color: 'text-red-700',    bg: 'bg-red-100'    },
-  { value: 'na',         label: 'N/A',        color: 'text-gray-500',   bg: 'bg-gray-100'   },
+  { value: 'atende',     label: 'Atende',     color: '#15803d', bg: '#dcfce7' },
+  { value: 'parcial',    label: 'Parcial',    color: '#a16207', bg: '#fef9c3' },
+  { value: 'nao_atende', label: 'Não Atende', color: '#b91c1c', bg: '#fee2e2' },
+  { value: 'na',         label: 'N/A',        color: '#6b7280', bg: '#f3f4f6' },
 ];

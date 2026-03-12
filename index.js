@@ -1,4 +1,4 @@
 import { registerRootComponent } from 'expo';
-import App from './src/App'; // Indica que o App está dentro de src
+import App from './App'; // Ele chama o App.jsx que você acabou de mover para a raiz
 
 registerRootComponent(App);

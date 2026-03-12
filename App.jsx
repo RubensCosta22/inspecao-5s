@@ -4,6 +4,7 @@ import {
   Image, Alert, ActivityIndicator, SafeAreaView,
   StatusBar, Platform 
 } from 'react-native';
+import { registerRootComponent } from 'expo';
 import * as ImagePicker from 'expo-image-picker';
 import * as ImageManipulator from 'expo-image-manipulator';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -11,13 +12,12 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 // Ícones específicos para Native
 import {
   Camera, ClipboardList, History, ArrowLeft, CheckCircle,
-  AlertTriangle, Search, Trash2, Plus, 
-  ChevronDown, LayoutDashboard, Lightbulb, RefreshCw, X
+  Save, Plus, LayoutDashboard, X
 } from 'lucide-react-native';
 
-// Importações do seu projeto (config.js e helpers.js devem estar na mesma pasta src)
-import { APP_NAME, APP_SUBTITLE, APP_VERSION, AREAS, QUESTIONARIO, OPCOES_RESPOSTA } from './config.js';
-import { calculateScore, calculateSenseScores, getAreaFromLocal, scoreColor, scoreBg } from './helpers.js';
+// IMPORTANTE: Como o App.jsx está na raiz, buscamos os arquivos dentro de /src
+import { APP_NAME, APP_SUBTITLE, APP_VERSION, QUESTIONARIO, OPCOES_RESPOSTA } from './src/config.js';
+import { calculateScore, calculateSenseScores, scoreColor, scoreBg } from './src/helpers.js';
 
 // ---------------------------------------------------------------------------
 // UI COMPONENTS
@@ -73,13 +73,17 @@ export default function App() {
     };
   }
 
+  // Carregar dados salvos
   useEffect(() => {
     const loadData = async () => {
       try {
         const saved = await AsyncStorage.getItem('@inspections');
         if (saved) setInspections(JSON.parse(saved));
-      } catch (e) { console.error(e); }
-      finally { setLoadingDB(false); }
+      } catch (e) { 
+        console.error("Erro ao carregar AsyncStorage:", e); 
+      } finally { 
+        setLoadingDB(false); 
+      }
     };
     loadData();
   }, []);
@@ -137,13 +141,16 @@ export default function App() {
 
     setAiLoading(true);
     try {
-      const response = await fetch(`${process.env.EXPO_PUBLIC_VITE_API_URL}/api/analyze`, {
+      // Fallback para a URL caso o process.env falhe
+      const apiUrl = process.env.EXPO_PUBLIC_VITE_API_URL || 'https://sua-url-padrao.com';
+      
+      const response = await fetch(`${apiUrl}/api/analyze`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ photos: aiPhotos })
       });
 
-      if (!response.ok) throw new Error('Falha na comunicação com o Gemini');
+      if (!response.ok) throw new Error('Falha na comunicação com a IA');
       
       const result = await response.json();
       const novasRespostas = {};
@@ -170,7 +177,7 @@ export default function App() {
   };
 
   // -------------------------------------------------------------------------
-  // SCREENS
+  // TELAS
   // -------------------------------------------------------------------------
 
   if (screen === 'home') {
@@ -186,13 +193,13 @@ export default function App() {
             <Text style={styles.subtitle}>{APP_SUBTITLE}</Text>
           </View>
 
-          <Button onClick={() => setScreen('new')} style={{ width: '100%', marginBottom: 15 }}>
+          <Button onClick={() => setScreen('audit')} style={{ width: '100%', marginBottom: 15 }}>
             <Plus color="white" size={20} />
             <Text style={styles.btnText}>Nova Inspeção</Text>
           </Button>
 
           <View style={{ flexDirection: 'row', gap: 10 }}>
-            <Button variant="secondary" onClick={() => setScreen('history')} style={{ flex: 1 }}>
+            <Button variant="secondary" onClick={() => Alert.alert("Em breve", "Histórico integrado ao Postgres")} style={{ flex: 1 }}>
               <History color="#1d4ed8" size={18} />
               <Text style={styles.btnTextSec}>Histórico</Text>
             </Button>
@@ -210,7 +217,7 @@ export default function App() {
           <TouchableOpacity onPress={() => setScreen('home')}>
             <ArrowLeft color="#334155" size={24} />
           </TouchableOpacity>
-          <Text style={styles.headerTitle}>Auditoria em {currentData.local || 'Local'}</Text>
+          <Text style={styles.headerTitle}>Nova Auditoria</Text>
         </View>
         <ScrollView style={{ padding: 15 }}>
           {QUESTIONARIO.map((bloco, bIdx) => (
@@ -239,30 +246,18 @@ export default function App() {
           ))}
           <Button onClick={() => setScreen('home')} style={{ marginBottom: 40 }}>
             <Save color="white" size={20} />
-            <Text style={styles.btnText}>Salvar Localmente</Text>
+            <Text style={styles.btnText}>Salvar</Text>
           </Button>
         </ScrollView>
       </SafeAreaView>
     );
   }
 
-  // Fallback para telas em desenvolvimento
-  return (
-    <SafeAreaView style={styles.container}>
-      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', padding: 20 }}>
-        {aiLoading ? <ActivityIndicator size="large" color="#1d4ed8" /> : (
-          <>
-            <Text style={{ marginBottom: 20 }}>Módulo IA ou Configuração pendente.</Text>
-            <Button onClick={() => setScreen('home')}>Voltar ao Início</Button>
-          </>
-        )}
-      </View>
-    </SafeAreaView>
-  );
+  return null;
 }
 
 // ---------------------------------------------------------------------------
-// STYLES
+// ESTILOS
 // ---------------------------------------------------------------------------
 
 const styles = StyleSheet.create({
@@ -277,10 +272,12 @@ const styles = StyleSheet.create({
   btnText: { color: 'white', fontWeight: 'bold', fontSize: 16, marginLeft: 8 },
   btnTextSec: { color: '#1d4ed8', fontWeight: 'bold', fontSize: 16, marginLeft: 8 },
   card: { backgroundColor: 'white', borderRadius: 16, padding: 10, elevation: 2, shadowColor: '#000', shadowOpacity: 0.05, shadowRadius: 10 },
-  header: { padding: 15, backgroundColor: 'white', flexDirection: 'row', alignItems: 'center', borderBottomWidth: 1, borderBottomColor: '#e2e8f0' },
+  header: { padding: 20, backgroundColor: 'white', flexDirection: 'row', alignItems: 'center', borderBottomWidth: 1, borderBottomColor: '#e2e8f0' },
   headerTitle: { fontSize: 18, fontWeight: 'bold', marginLeft: 15 },
   sectionTitle: { fontSize: 15, fontWeight: 'bold', color: '#1d4ed8', marginBottom: 12, textTransform: 'uppercase' },
   optionBtn: { paddingVertical: 8, paddingHorizontal: 12, borderWidth: 1, borderColor: '#e2e8f0', borderRadius: 8 },
   version: { position: 'absolute', bottom: 20, color: '#94a3b8', fontSize: 12 }
 });
 
+// REGISTRO OBRIGATÓRIO NA RAIZ
+registerRootComponent(App);

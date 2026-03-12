@@ -4,7 +4,6 @@ import {
   Image, Alert, ActivityIndicator, SafeAreaView,
   StatusBar, Platform 
 } from 'react-native';
-import { registerRootComponent } from 'expo';
 import * as ImagePicker from 'expo-image-picker';
 import * as ImageManipulator from 'expo-image-manipulator';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -285,5 +284,3 @@ const styles = StyleSheet.create({
   version: { position: 'absolute', bottom: 20, color: '#94a3b8', fontSize: 12 }
 });
 
-// REGISTRO OBRIGATÓRIO PARA NÃO CRASHAR
-registerRootComponent(App);
